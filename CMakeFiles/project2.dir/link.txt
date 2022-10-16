@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/project2.dir/src/functions.cpp.o CMakeFiles/project2.dir/src/instructions.cpp.o CMakeFiles/project2.dir/src/main.cpp.o  -o project2 

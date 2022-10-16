@@ -1,0 +1,3 @@
+/home/oslab/Desktop/C++/projects/project2/CMakeFiles/rebuild_cache.dir
+/home/oslab/Desktop/C++/projects/project2/CMakeFiles/edit_cache.dir
+/home/oslab/Desktop/C++/projects/project2/CMakeFiles/project2.dir
