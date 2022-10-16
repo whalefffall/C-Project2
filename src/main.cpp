@@ -1,15 +1,15 @@
 // C++ project2: a better calculator by Feng Baijun, SID:12011124
 #include <map>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "../include/instructions.hpp"
 
 using namespace std;
 
-void trim(string &s);
 string &replace_all(string& str, const string &old_value, const string &new_value);
+void trim(string &s);
+
 
 int main(int argc, char * argv[]) {
 
@@ -19,6 +19,7 @@ int main(int argc, char * argv[]) {
     // print start tip
     print_start();
 
+    // print instructions to the calculator
     print_instructions();
 
     while(1)
@@ -27,24 +28,24 @@ int main(int argc, char * argv[]) {
         
         cin.getline(in, 1000);
         string input = in;
+        // erase all blanks
         trim(input);
+
+        // handle negative notation starts 
+        if (input[0] == '-') { input = '0' + input;}
+        
+        // handle negative notation starts after left parenthesis
         input = replace_all(input, "(-", "(0-");
+
+        // quit 
         if (check_quit(input)) { return 0;}
+
+        // other command
         if (check_command(input)) { continue;}
+        
+        // handle the expression
         get_status(input, 1);
     }
-}
-
-void trim(string &s)
-{
-	int index = 0;
-	if(!s.empty())
-	{
-		while( (index = s.find(' ',index)) != string::npos)
-		{
-			s.erase(index,1);
-		}
-	}
 }
 
 string &replace_all(string& str, const string &old_value, const string &new_value)     
@@ -58,3 +59,15 @@ string &replace_all(string& str, const string &old_value, const string &new_valu
     }
     return str;
 } 
+
+void trim(string &s)
+{
+	int index = 0;
+	if(!s.empty())
+	{
+		while( (index = s.find(' ',index)) != string::npos)
+		{
+			s.erase(index,1);
+		}
+	}
+}

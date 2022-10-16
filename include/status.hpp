@@ -5,11 +5,6 @@
 #define COMMAND 1
 #define EXPRESSION 3
 #define INVALID 0
-#define DOT .
-#define PLUS +
-#define SUB -
-#define MUL *
-#define DIV /
-using namespace std;
+
 
 

@@ -1,29 +1,16 @@
 #include "../include/instructions.hpp"
 
 using namespace std;
-map <string, long double> variable_dict;
-long double result;
+
+// define opeators in postfix expression, | for abs(),
+//  & for sqrt() and^ for square
 const char opt_set[12] = "+-*/()=|&^";
 
-void check_command_line_arguments(int argc)
-{
-    if (argc > 1) { printf(_invalid_command_line_arguments);}    
-}
+//store result for input expression
+long double result;
 
-bool check_command(string input)
-{
-    return check_clear(input) | check_instructions(input) | check_functions(input) | check_list(input); 
-}
-
-bool check_functions(string input)
-{
-    if (input.compare("functions") == 0)
-    {
-        printf("Functions\nabs(x)      the absolute value of c\nsquare(x)   the square of x\nsqrt(x)     the square root of x.\n");
-        return 1;
-    }
-    return 0;
-}
+// store all vatiables of the calculator
+map <string, long double> variable_dict;
 
 bool check_clear(string input)
 {
@@ -34,17 +21,22 @@ bool check_clear(string input)
     }
     return 0;
 }
- 
-bool check_list(string input)
+
+bool check_command(string input)
 {
-    if (input.compare(LIST) == 0)
+    return check_clear(input) | check_instructions(input) | check_functions(input) | check_list(input); 
+}
+
+void check_command_line_arguments(int argc)
+{
+    if (argc > 1) { printf(_invalid_command_line_arguments);}    
+}
+
+bool check_functions(string input)
+{
+    if (input.compare("functions") == 0)
     {
-        // printf("yes\n");
-        map<string, long double>::iterator iter;
-        for (iter = variable_dict.begin(); iter != variable_dict.end(); iter++)
-        {
-            printf("%s=%Lf\n", iter->first.c_str(), iter->second);
-        }
+        printf("Functions\nabs(x)      the absolute value of x\nsquare(x)   the square of x\nsqrt(x)     the square root of x.\n");
         return 1;
     }
     return 0;
@@ -60,6 +52,21 @@ bool check_instructions(string input)
     return 0;
 }
 
+bool check_list(string input)
+{
+    if (input.compare(LIST) == 0)
+    {
+        // printf("yes\n");
+        map<string, long double>::iterator iter;
+        for (iter = variable_dict.begin(); iter != variable_dict.end(); iter++)
+        {
+            printf("%s=%Lf\n", iter->first.c_str(), iter->second);
+        }
+        return 1;
+    }
+    return 0;
+}
+
 bool check_quit(string input)
 {
     if (input.compare(QUIT) == 0)
@@ -70,86 +77,71 @@ bool check_quit(string input)
     return 0;
 }
 
-int get_status(string input, bool print)
+bool compute(string &postfix, stack<long double> val)
 {
-    // cout<<input<<endl;
-    // printf("0\n");
-    regex assign("([a-z]+)=([\\S]+)");
-    regex variable("([a-z]+)");
-    regex digit_int("([-+]?\\d+)");
-    regex digit_float("([-+]?\\d+\\.\\d+)");
-    regex valid_expression("[a-z0-9\\+\\-\\*\\/\\.\\(\\)]+");
-    bool isAssign = regex_match(input, assign); 
-    // printf("1\n");
-    if (isAssign)
+    // cout<<postfix<<endl;
+    long double theNum = 0;
+    int hasDot = 0;
+    bool inNum = 0;
+    bool inVar = 0;
+    size_t start = 0;
+    char c;
+    string temp = "";
+    for (size_t i = 0; i < postfix.length(); i++)
     {
-        smatch search;
-        regex_search(input, search, assign);
-        string var = search.str(1);
-        // printf("%s\n", search.str(2).c_str());
-        int status = get_status(search.str(2), 0);
-        if (status == INVALID) { return INVALID;}
-        variable_dict.insert({var, result});
-        // printf("inserted!\n");
-        return ASSIGN;
+        c = postfix[i];
+        if ('0' <= c && c <= '9' || c == '.')
+        {
+            if (!inNum)
+            {
+                start = i;
+                inNum = 1; 
+            }
+            
+        }
+        else{
+            // cout<<"4:"<<postfix.substr(start, i-start)<<endl;
+            if(inNum == 1){ val.push(stold(postfix.substr(start, i-start)));}
+            inNum = 0;
+            long double x, y;
+            if(c != ' '){
+                x = val.top();
+                val.pop();
+                if (c == '^') { val.push(square(x));continue;}
+                if (c == '&') { 
+                    if (x < 0)
+                    {
+                        cout<<"The base of square root should be non-negtive!"<<endl;
+                        return INVALID;
+                    }
+                    
+                    val.push(sqrt(x));continue;
+                }
+                if (c == '|') { 
+                    val.push(abs(x));continue;
+                }
+                y = val.top();
+                val.pop();
+                if (c == '+') { val.push(y+x);}
+                if (c == '-') { val.push(y-x);}
+                if (c == '*') { val.push(y*x);}
+                if (c == '/') {
+                    if (x == 0)
+                    {
+                        cout<<"Error: divided by zero!"<<endl;
+                        return INVALID;
+                    }
+                     
+                    val.push(y/x);
+                }
+            }
+            
+        }
     }
-
-    bool isValid =  regex_match(input, valid_expression);
-    if (!isValid) 
-    {
-        cout<<"Invalid expression!\n";
-        return INVALID;
-    }
-
-    bool isInt = regex_match(input, digit_int);
-    if (isInt)
-    {
-        smatch search;
-        regex_search(input, search, digit_int);
-        // cout<<search.str(1)<<endl;
-        result = stold(search.str(1));
-        return EXPRESSION;
-    }
-
-    bool isFloat = regex_match(input, digit_float);
-    if (isFloat)
-    {
-        smatch search;
-        regex_search(input, search, digit_float);
-        // cout<<"2:"<<search.str(1)<<endl;
-        result = stold(search.str(1));
-        return EXPRESSION;
-    }
-
-    
-    
-
-    stack<char> opt;
-    stack<long double> val;
-    string postfix;
-    if (!get_postfix(input, postfix, opt)) { return INVALID;}
-    if (!compute(postfix, val)) { return INVALID;}
-    if (print)
-    {
-        cout<<result<<endl;
-    }
-    
-    return EXPRESSION;
-    
-
+    result = val.top();
+    // cout<<result<<endl;
+    return true;
 }
-
-void print_instructions()
-{
-    printf(GUIDE);
-}
-
-void print_start()
-{
-    printf(_start);
-}
-
-
 
 bool get_postfix(string &input, string &to, stack<char> opt)
 {
@@ -181,7 +173,10 @@ bool get_postfix(string &input, string &to, stack<char> opt)
             
             if (c == '.')
             {
-                if (hasDot) return INVALID;
+                if (hasDot) {
+                    cout<<"Error: unexpected \".\" !"<<endl;
+                    return INVALID;
+                }
                 hasDot = 1;
             }
             
@@ -317,62 +312,70 @@ bool get_postfix(string &input, string &to, stack<char> opt)
 
 }
 
-bool compute(string &postfix, stack<long double> val)
+int get_status(string input, bool print)
 {
-    // cout<<postfix<<endl;
-    long double theNum = 0;
-    int hasDot = 0;
-    bool inNum = 0;
-    bool inVar = 0;
-    size_t start = 0;
-    char c;
-    string temp = "";
-    for (size_t i = 0; i < postfix.length(); i++)
+    // cout<<input<<endl;
+    // printf("0\n");
+    regex assign("([a-z]+)=([\\S]+)");
+    regex digit_int("([-+]?\\d+)");
+    regex digit_float("([-+]?\\d+\\.\\d+)");
+    regex valid_expression("[a-z0-9\\+\\-\\*\\/\\.\\(\\)]+");
+    bool isAssign = regex_match(input, assign); 
+    // printf("1\n");
+    if (isAssign)
     {
-        c = postfix[i];
-        if ('0' <= c && c <= '9' || c == '.')
-        {
-            if (!inNum)
-            {
-                start = i;
-                inNum = 1; 
-            }
-            
-        }
-        else{
-            // cout<<"4:"<<postfix.substr(start, i-start)<<endl;
-            if(inNum == 1){ val.push(stold(postfix.substr(start, i-start)));}
-            inNum = 0;
-            long double x, y;
-            if(c != ' '){
-                x = val.top();
-                val.pop();
-                if (c == '^') { val.push(square(x));continue;}
-                if (c == '&') { 
-                    if (x < 0)
-                    {
-                        cout<<"The base of square root should be non-negtive!"<<endl;
-                        return INVALID;
-                    }
-                    
-                    val.push(sqrt(x));continue;
-                }
-                if (c == '|') { 
-                    val.push(abs(x));continue;
-                }
-                y = val.top();
-                val.pop();
-                if (c == '+') { val.push(y+x);}
-                if (c == '-') { val.push(y-x);}
-                if (c == '*') { val.push(y*x);}
-                if (c == '/') { val.push(y/x);}
-            }
-            
-        }
+        smatch search;
+        regex_search(input, search, assign);
+        string var = search.str(1);
+        // printf("%s\n", search.str(2).c_str());
+        int status = get_status(search.str(2), 0);
+        if (status == INVALID) { return INVALID;}
+        variable_dict.insert({var, result});
+        // printf("inserted!\n");
+        return ASSIGN;
     }
-    result = val.top();
-    // cout<<result<<endl;
-    return true;
+
+    bool isValid = regex_match(input, valid_expression);
+    if (!isValid) 
+    {
+        cout<<"Error: Unexpected tokens!\n";
+        return INVALID;
+    }
+
+    bool isInt = regex_match(input, digit_int);
+    if (isInt)
+    {
+        smatch search;
+        regex_search(input, search, digit_int);
+        // cout<<search.str(1)<<endl;
+        result = stold(search.str(1));
+        return EXPRESSION;
+    }
+
+    bool isFloat = regex_match(input, digit_float);
+    if (isFloat)
+    {
+        smatch search;
+        regex_search(input, search, digit_float);
+        // cout<<"2:"<<search.str(1)<<endl;
+        result = stold(search.str(1));
+        return EXPRESSION;
+    }
+
+    
+    stack<char> opt;
+    stack<long double> val;
+    string postfix;
+    if (!get_postfix(input, postfix, opt)) { return INVALID;}
+    if (!compute(postfix, val)) { return INVALID;}
+    if (print)
+    {
+        cout<<result<<endl;
+    }
+    
+    return EXPRESSION;
+    
+
 }
 
 int level(char opt)
@@ -383,3 +386,16 @@ int level(char opt)
     }
     return -1;
 }
+
+void print_instructions()
+{
+    printf(GUIDE);
+}
+
+void print_start()
+{
+    printf(_start);
+}
+
+
+

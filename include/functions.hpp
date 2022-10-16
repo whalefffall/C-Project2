@@ -1,3 +1,4 @@
+// all functions supported by the calculator
 #pragma once
 #include <math.h>
 #include <vector>
